@@ -1,0 +1,35 @@
+digraph UML {
+  rankdir=TB;
+  graph [fontname="Helvetica", nodesep=0.5, ranksep=0.8, bgcolor="white"];
+  node  [shape=record, fontname="Helvetica", fontsize=11, style=filled, fillcolor="#FFFFFF"];
+  edge  [fontname="Helvetica", fontsize=10];
+
+  Main [fillcolor="#E8F0FE", label="{«client»\nMain|+ main(args: String[]): void}"];
+  ShopFactory [fillcolor="#FFF4E0", label="{ShopFactory|+ createOrderFacade(): OrderFacade}"];
+  OrderFacade [fillcolor="#FFE0E0", label="{«facade»\nOrderFacade|- inventory: InventoryService\l- payments: PaymentProcessor\l- shipping: ShippingService\l- notifications: NotificationService\l- orders: Map\<String, Order\>\l|+ placeOrder(cart: Map, customer: Customer): OrderResult\l+ cancelOrder(orderId: String): OrderResult\l- fail(customer, orderId, reason): OrderResult\l}"];
+
+  subgraph cluster_sub {
+    label="Complex subsystem (unaware of the facade)"; fontname="Helvetica"; style=dashed; color="#888888";
+    InventoryService [label="{InventoryService|- prices: Map\l- stock: Map\l|+ addProduct(sku, price, qty)\l+ reserve(cart)\l+ release(cart)\l+ calculateSubtotal(cart): double\l+ getStock(sku): int\l}"];
+    PaymentProcessor [label="{PaymentProcessor|- cardBalances: Map\l- payments: Map\l|+ registerCard(card, balance)\l+ charge(card, amount): String\l+ refund(transactionId)\l}"];
+    ShippingService [label="{ShippingService|- activeShipments: Set\l|+ canDeliverTo(city): boolean\l+ calculateCost(city): double\l+ createShipment(orderId, city): String\l+ cancelShipment(tracking)\l}"];
+    NotificationService [label="{NotificationService||+ sendEmail(email, subject, body)\l}"];
+  }
+
+  Customer [label="{«record»\nCustomer|name, email, city, cardNumber}"];
+  OrderResult [label="{«record»\nOrderResult|success, orderId, message}"];
+  Order [label="{«record»\nOrder|id, customer, cart, total,\ltransactionId, trackingNumber\l}"];
+
+  Main -> OrderFacade [label="uses\l(placeOrder, cancelOrder)", style=dashed, arrowhead=vee];
+  Main -> ShopFactory [label="gets facade from", style=dashed, arrowhead=vee];
+  ShopFactory -> OrderFacade [label="creates", style=dashed, arrowhead=vee];
+
+  OrderFacade -> InventoryService [arrowhead=vee, arrowtail=diamond, dir=both, label="has-a\l(delegates stock)"];
+  OrderFacade -> PaymentProcessor [arrowhead=vee, arrowtail=diamond, dir=both, label="has-a\l(delegates payment)"];
+  OrderFacade -> ShippingService [arrowhead=vee, arrowtail=diamond, dir=both, label="has-a\l(delegates delivery)"];
+  OrderFacade -> NotificationService [arrowhead=vee, arrowtail=diamond, dir=both, label="has-a\l(delegates e-mail)"];
+  OrderFacade -> Order [arrowhead=vee, arrowtail=odiamond, dir=both, label="stores"];
+
+  Main -> Customer [style=dashed, arrowhead=vee, label="creates"];
+  OrderFacade -> OrderResult [style=dashed, arrowhead=vee, label="returns"];
+}
